@@ -1,12 +1,13 @@
 package main
 
 import (
+	"bronya/database"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// Подключаем базу
-	ConnectDatabase()
+	database.ConnectDatabase()
 
 	// Создаём API сервер
 	r := gin.Default()
