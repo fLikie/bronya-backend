@@ -88,6 +88,7 @@ func main() {
 	r.POST("/api/register", registerHandler)
 	r.POST("/api/login", loginHandler)
 	r.GET("/api/profile", AuthMiddleware(), Profile)
+	r.GET("/api/places", AuthMiddleware(), GetPlaces)
 	r.POST("/api/places", AuthMiddleware(), adminMiddleware(), createPlace)
 	r.POST("/api/bookings", AuthMiddleware(), createBooking)
 	r.POST("/api/make-admin", AuthMiddleware(), adminMiddleware(), makeAdmin)
@@ -223,6 +224,15 @@ func GetUsers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, users)
+}
+
+func GetPlaces(c *gin.Context) {
+	var places []Place
+	if err := db.Find(&places).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch places"})
+		return
+	}
+	c.JSON(http.StatusOK, places)
 }
 
 func CreatePlace(c *gin.Context) {
