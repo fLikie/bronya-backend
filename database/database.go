@@ -6,12 +6,13 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"os"
 )
 
 // Глобальная переменная для базы
 var DB *gorm.DB
 
-func ConnectDatabase() {
+func ConnectDatabase() *gorm.DB {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Файл .env не найден, используем переменные среды")
@@ -20,11 +21,11 @@ func ConnectDatabase() {
 	// Формируем строку подключения
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		"45.143.95.91",
-		"booking_user",
-		"password",
-		"booking_service",
-		"5432",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_PORT"),
 	)
 
 	// Подключаемся к базе
@@ -34,4 +35,6 @@ func ConnectDatabase() {
 	}
 
 	fmt.Println("✅ Успешное подключение к базе данных")
+
+	return DB
 }
