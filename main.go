@@ -29,26 +29,76 @@ func init() {
 	db = connectDatabase
 }
 
+func adminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole, exists := c.Get("role")
+		if !exists || userRole != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+func createPlace(c *gin.Context) {
+	var place Place
+	if err := c.ShouldBindJSON(&place); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	db.Create(&place)
+	c.JSON(http.StatusOK, gin.H{"message": "Place added successfully"})
+}
+
+func createBooking(c *gin.Context) {
+	var booking Booking
+	if err := c.ShouldBindJSON(&booking); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	db.Create(&booking)
+	c.JSON(http.StatusOK, gin.H{"message": "Booking created successfully"})
+}
+
+func makeAdmin(c *gin.Context) {
+	var input struct {
+		Email string `json:"email"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user User
+	if err := db.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	user.Role = "admin"
+	db.Save(&user)
+
+	c.JSON(http.StatusOK, gin.H{"message": "User promoted to admin"})
+}
+
 func main() {
 	r := gin.Default()
-
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "Сервис бронирования работает! 🚀"})
-	})
-
 	r.POST("/register", registerHandler)
 	r.POST("/login", loginHandler)
 	r.GET("/profile", AuthMiddleware(), Profile)
-
-	// Запускаем сервер
+	r.POST("/places", AuthMiddleware(), adminMiddleware(), createPlace)
+	r.POST("/bookings", AuthMiddleware(), createBooking)
+	r.POST("/make-admin", AuthMiddleware(), adminMiddleware(), makeAdmin)
 	r.Run(":8080")
 }
 
 type User struct {
-	ID        int    `gorm:"primary_key"`
+	ID        uint   `gorm:"primaryKey"`
 	Username  string `gorm:"unique;not null"`
 	Email     string `gorm:"unique;not null"`
 	Password  string `gorm:"not null"`
+	Role      string `gorm:"not null;default:user"`
 	CreatedAt time.Time
 }
 
