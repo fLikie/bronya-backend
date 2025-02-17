@@ -4,9 +4,11 @@ import (
 	"bronya/database"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	gorm "gorm.io/gorm"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -14,14 +16,22 @@ import (
 
 var db *gorm.DB
 
-func main() {
-	// Подключаем базу
-	db = database.ConnectDatabase()
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	connectDatabase := database.ConnectDatabase()
+	err = connectDatabase.AutoMigrate(&User{}, &Place{}, &Booking{})
+	if err != nil {
+		return
+	}
+	db = connectDatabase
+}
 
-	// Создаём API сервер
+func main() {
 	r := gin.Default()
 
-	// Тестовый маршрут
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Сервис бронирования работает! 🚀"})
 	})
@@ -39,6 +49,21 @@ type User struct {
 	Username  string `gorm:"unique;not null"`
 	Email     string `gorm:"unique;not null"`
 	Password  string `gorm:"not null"`
+	CreatedAt time.Time
+}
+
+type Place struct {
+	ID        uint   `gorm:"primaryKey"`
+	Name      string `gorm:"unique;not null"`
+	Location  string `gorm:"not null"`
+	CreatedAt time.Time
+}
+
+type Booking struct {
+	ID        uint      `gorm:"primaryKey"`
+	UserID    uint      `gorm:"not null"`
+	PlaceID   uint      `gorm:"not null"`
+	Date      time.Time `gorm:"not null"`
 	CreatedAt time.Time
 }
 
@@ -123,4 +148,24 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("user_id", uint(claims["user_id"].(float64)))
 		c.Next()
 	}
+}
+
+func CreatePlace(c *gin.Context) {
+	var place Place
+	if err := c.ShouldBindJSON(&place); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	db.Create(&place)
+	c.JSON(http.StatusOK, gin.H{"message": "Place added successfully"})
+}
+
+func CreateBooking(c *gin.Context) {
+	var booking Booking
+	if err := c.ShouldBindJSON(&booking); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	db.Create(&booking)
+	c.JSON(http.StatusOK, gin.H{"message": "Booking created successfully"})
 }
