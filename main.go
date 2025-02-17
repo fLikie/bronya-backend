@@ -59,7 +59,14 @@ func registerHandler(c *gin.Context) {
 
 	db.Create(&user)
 
-	c.JSON(http.StatusOK, gin.H{"message": "User registered"})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
+	})
+
+	tokenString, _ := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+
+	c.JSON(http.StatusCreated, gin.H{"token": tokenString})
 }
 
 func loginHandler(c *gin.Context) {
