@@ -84,12 +84,12 @@ func makeAdmin(c *gin.Context) {
 
 func main() {
 	r := gin.Default()
-	r.POST("/register", registerHandler)
-	r.POST("/login", loginHandler)
-	r.GET("/profile", AuthMiddleware(), Profile)
-	r.POST("/places", AuthMiddleware(), adminMiddleware(), createPlace)
-	r.POST("/bookings", AuthMiddleware(), createBooking)
-	r.POST("/make-admin", AuthMiddleware(), adminMiddleware(), makeAdmin)
+	r.POST("/api/register", registerHandler)
+	r.POST("/api/login", loginHandler)
+	r.GET("/api/profile", AuthMiddleware(), Profile)
+	r.POST("/api/places", AuthMiddleware(), adminMiddleware(), createPlace)
+	r.POST("/api/bookings", AuthMiddleware(), createBooking)
+	r.POST("/api/make-admin", AuthMiddleware(), adminMiddleware(), makeAdmin)
 	r.Run(":8080")
 }
 
