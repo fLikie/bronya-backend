@@ -90,6 +90,7 @@ func main() {
 	r.POST("/api/places", AuthMiddleware(), adminMiddleware(), createPlace)
 	r.POST("/api/bookings", AuthMiddleware(), createBooking)
 	r.POST("/api/make-admin", AuthMiddleware(), adminMiddleware(), makeAdmin)
+	r.GET("/api/users", AuthMiddleware(), adminMiddleware(), GetUsers)
 	r.Run(":8080")
 }
 
@@ -198,6 +199,15 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("user_id", uint(claims["user_id"].(float64)))
 		c.Next()
 	}
+}
+
+func GetUsers(c *gin.Context) {
+	var users []User
+	if err := db.Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		return
+	}
+	c.JSON(http.StatusOK, users)
 }
 
 func CreatePlace(c *gin.Context) {
