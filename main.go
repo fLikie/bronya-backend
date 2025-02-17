@@ -52,7 +52,6 @@ func registerHandler(c *gin.Context) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 
 	user := User{
-		Username: input.Username,
 		Email:    input.Email,
 		Password: string(hashedPassword),
 	}
