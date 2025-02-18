@@ -93,6 +93,8 @@ func main() {
 	r.POST("/api/bookings", AuthMiddleware(), createBooking)
 	r.POST("/api/make-admin", AuthMiddleware(), adminMiddleware(), makeAdmin)
 	r.GET("/api/users", AuthMiddleware(), adminMiddleware(), GetUsers)
+	r.GET("/api/places/:id", AuthMiddleware(), GetPlace)
+	r.PUT("/api/places/:id", AuthMiddleware(), UpdatePlace)
 	r.Run(":8080")
 }
 
@@ -253,4 +255,44 @@ func CreateBooking(c *gin.Context) {
 	}
 	db.Create(&booking)
 	c.JSON(http.StatusOK, gin.H{"message": "Booking created successfully"})
+}
+
+func GetPlace(c *gin.Context) {
+	var place Place
+	placeID := c.Param("id")
+
+	if err := db.First(&place, placeID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Place not found"})
+		return
+	}
+	c.JSON(http.StatusOK, place)
+}
+
+func UpdatePlace(c *gin.Context) {
+	var place Place
+	placeID := c.Param("id")
+
+	if err := db.First(&place, placeID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Place not found"})
+		return
+	}
+
+	var updateData struct {
+		Name     string `json:"name"`
+		Location string `json:"location"`
+	}
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	place.Name = updateData.Name
+	place.Location = updateData.Location
+
+	if err := db.Save(&place).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update place"})
+		return
+	}
+
+	c.JSON(http.StatusOK, place)
 }
