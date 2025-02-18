@@ -11,6 +11,7 @@ import (
 	gorm "gorm.io/gorm"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -148,17 +149,32 @@ func UpdatePlace(c *gin.Context) {
 		return
 	}
 
-	var updateData struct {
-		Name     string `json:"name"`
-		Location string `json:"location"`
-	}
-	if err := c.ShouldBindJSON(&updateData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
+	name := c.PostForm("name")
+	location := c.PostForm("location")
 
-	place.Name = updateData.Name
-	place.Location = updateData.Location
+	// Обновляем текстовые данные
+	place.Name = name
+	place.Location = location
+
+	// Проверяем, есть ли новое изображение
+	file, err := c.FormFile("image")
+	if err == nil {
+		filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
+		filepath := "/var/www/bronya-web/uploads/" + filename
+
+		// Сохраняем новый файл
+		if err := c.SaveUploadedFile(file, filepath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save new image"})
+			return
+		}
+
+		// Удаляем старое изображение
+		oldFilePath := "/var/www/bronya-web/uploads/" + place.Image
+		os.Remove(oldFilePath)
+
+		// Сохраняем новый путь
+		place.Image = filename
+	}
 
 	if err := db.Save(&place).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update place"})
