@@ -41,7 +41,7 @@ func CreatePlace(c *gin.Context) {
 
 	// Сохраняем файл в папку uploads
 	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
-	filepath := "uploads/" + filename
+	filepath := "/var/www/booking/uploads/" + filename
 	if err := c.SaveUploadedFile(file, filepath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
 		return
