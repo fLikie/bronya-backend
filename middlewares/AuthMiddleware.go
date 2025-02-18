@@ -93,7 +93,7 @@ func LoginHandler(c *gin.Context) {
 	}
 	var user models.User
 
-	if err := database.FindUser(&input, input.Email); err != nil {
+	if err := database.FindUser(&user, input.Email); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
