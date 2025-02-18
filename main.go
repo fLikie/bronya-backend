@@ -4,12 +4,14 @@ import (
 	"bronya/database"
 	"bronya/middlewares"
 	"bronya/models"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	gorm "gorm.io/gorm"
 	"log"
 	"net/http"
+	"time"
 )
 
 var db *gorm.DB
@@ -28,13 +30,31 @@ func init() {
 }
 
 func CreatePlace(c *gin.Context) {
-	var place models.Place
-	if err := c.ShouldBindJSON(&place); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	name := c.PostForm("name")
+	location := c.PostForm("location")
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image upload required"})
 		return
 	}
-	db.Create(&place)
-	c.JSON(http.StatusOK, gin.H{"message": "Place added successfully"})
+
+	// Сохраняем файл в папку uploads
+	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
+	filepath := "uploads/" + filename
+	if err := c.SaveUploadedFile(file, filepath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+		return
+	}
+
+	// Создаём запись в базе
+	place := models.Place{Name: name, Location: location, Image: filename}
+	if err := db.Create(&place).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create place"})
+		return
+	}
+
+	c.JSON(http.StatusOK, place)
 }
 
 func createBooking(c *gin.Context) {

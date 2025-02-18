@@ -7,4 +7,5 @@ type Place struct {
 	Name      string `gorm:"unique;not null"`
 	Location  string `gorm:"not null"`
 	CreatedAt time.Time
+	Image     string `json:"username,omitempty"`
 }
