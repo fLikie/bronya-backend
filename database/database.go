@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bronya/models"
 	"fmt"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -37,4 +38,12 @@ func ConnectDatabase() *gorm.DB {
 	fmt.Println("✅ Успешное подключение к базе данных")
 
 	return DB
+}
+
+func CreateUser(user *models.User) {
+	DB.Create(&user)
+}
+
+func FindUser(user *models.User, email string) error {
+	return DB.Where("email = ?", email).First(&user).Error
 }
