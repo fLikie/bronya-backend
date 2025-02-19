@@ -69,7 +69,7 @@ func RegisterHandler(c *gin.Context) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 
 	user := models.User{
-		Email:    input.Email,
+		Phone:    input.Phone,
 		Password: string(hashedPassword),
 	}
 
@@ -93,7 +93,7 @@ func LoginHandler(c *gin.Context) {
 	}
 	var user models.User
 
-	if err := database.FindUser(&user, input.Email); err != nil {
+	if err := database.FindUser(&user, input.Phone); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
