@@ -52,8 +52,22 @@ func AuthChecking() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", uint(claims["user_id"].(float64)))
-		c.Set("role", claims["role"].(string))
+		// Проверяем user_id
+		userID, ok := claims["user_id"].(float64)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user_id in token"})
+			c.Abort()
+			return
+		}
+
+		// Проверяем role
+		role, roleOk := claims["role"].(string)
+		if !roleOk {
+			role = "user" // Если role отсутствует, назначаем значение по умолчанию
+		}
+
+		c.Set("user_id", uint(userID))
+		c.Set("role", role)
 
 		c.Next()
 	}
