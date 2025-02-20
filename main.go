@@ -58,14 +58,47 @@ func CreatePlace(c *gin.Context) {
 	c.JSON(http.StatusOK, place)
 }
 
-func createBooking(c *gin.Context) {
-	var booking models.Booking
-	if err := c.ShouldBindJSON(&booking); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func CreateBooking(c *gin.Context) {
+	var input struct {
+		PlaceID  uint   `json:"place_id" binding:"required"`
+		TimeSlot string `json:"time_slot" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-	db.Create(&booking)
-	c.JSON(http.StatusOK, gin.H{"message": "Booking created successfully"})
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	booking := models.Booking{
+		PlaceID:  input.PlaceID,
+		UserID:   userID.(uint),
+		TimeSlot: input.TimeSlot,
+	}
+
+	if err := db.Create(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking"})
+		return
+	}
+
+	c.JSON(http.StatusOK, booking)
+}
+
+func GetBookingsForPlace(c *gin.Context) {
+	placeID := c.Param("id")
+
+	var bookings []models.Booking
+	if err := db.Where("place_id = ?", placeID).Find(&bookings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookings"})
+		return
+	}
+
+	c.JSON(http.StatusOK, bookings)
 }
 
 func makeAdmin(c *gin.Context) {
@@ -96,11 +129,12 @@ func main() {
 	r.GET("/api/profile", middlewares.AuthChecking(), Profile)
 	r.GET("/api/places", middlewares.AuthChecking(), GetPlaces)
 	r.POST("/api/places", middlewares.AuthChecking(), middlewares.AdminChecking(), CreatePlace)
-	r.POST("/api/bookings", middlewares.AuthChecking(), createBooking)
+	r.POST("/api/bookings", middlewares.AuthChecking(), CreateBooking)
 	r.POST("/api/make-admin", middlewares.AuthChecking(), middlewares.AdminChecking(), makeAdmin)
 	r.GET("/api/users", middlewares.AuthChecking(), middlewares.AdminChecking(), GetUsers)
 	r.GET("/api/places/:id", middlewares.AuthChecking(), GetPlace)
 	r.PUT("/api/places/:id", middlewares.AuthChecking(), UpdatePlace)
+	r.GET("/api/places/:id/bookings", middlewares.AuthChecking(), GetBookingsForPlace)
 	r.Run(":8080")
 }
 
