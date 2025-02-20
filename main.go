@@ -61,11 +61,13 @@ func CreatePlace(c *gin.Context) {
 func CreateBooking(c *gin.Context) {
 	var input struct {
 		PlaceID  uint   `json:"place_id" binding:"required"`
+		Date     string `json:"date" binding:"required"`
 		TimeSlot string `json:"time_slot" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		log.Println("Invalid input error:", err.Error()) // Логируем ошибку
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
 		return
 	}
 
@@ -75,13 +77,17 @@ func CreateBooking(c *gin.Context) {
 		return
 	}
 
+	log.Printf("Booking request: PlaceID=%d, Date=%s, TimeSlot=%s, UserID=%d", input.PlaceID, input.Date, input.TimeSlot, userID.(uint))
+
 	booking := models.Booking{
 		PlaceID:  input.PlaceID,
 		UserID:   userID.(uint),
+		Date:     input.Date,
 		TimeSlot: input.TimeSlot,
 	}
 
 	if err := db.Create(&booking).Error; err != nil {
+		log.Println("DB error:", err.Error()) // Логируем ошибку базы данных
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking"})
 		return
 	}
