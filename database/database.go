@@ -44,6 +44,6 @@ func CreateUser(user *models.User) {
 	DB.Create(&user)
 }
 
-func FindUser(user *models.User, email string) error {
-	return DB.Where("email = ?", email).First(&user).Error
+func FindUser(user *models.User, phone string) error {
+	return DB.Where("phone = ?", phone).First(&user).Error
 }
