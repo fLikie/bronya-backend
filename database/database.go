@@ -47,3 +47,39 @@ func CreateUser(user *models.User) {
 func FindUser(user *models.User, phone string) error {
 	return DB.Where("phone = ?", phone).First(&user).Error
 }
+
+func GetUserById(user *models.User, userId uint) error {
+	return DB.First(&user, userId).Error
+}
+
+func GetAllUsers(users *[]models.User) error {
+	return DB.Find(users).Error
+}
+
+func CreateBooking(booking *models.Booking) error {
+	return DB.Create(&booking).Error
+}
+
+func GetBookingsForPlace(bookings *[]models.Booking, placeId string) error {
+	return DB.Where("place = ?", placeId).First(&bookings).Error
+}
+
+func CreatePlace(place *models.Place) error {
+	return DB.Create(&place).Error
+}
+
+func GetPlace(place *models.Place, placeId string) error {
+	return DB.First(&place, placeId).Error
+}
+
+func GetPlaces(places *[]models.Place) error {
+	return DB.Find(&places).Error
+}
+
+func UpdatePlace(place *models.Place) error {
+	return DB.Save(&place).Error
+}
+
+func UpdateUser(user *models.User) error {
+	return DB.Save(&user).Error
+}
